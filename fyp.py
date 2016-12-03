@@ -4,8 +4,8 @@ import pylab as plt
 import math
 
 def make_star(x_axis,y_axis,x_centre,y_centre):
-    #Makes a stellar model using the
-    #axis lengths and centre points
+    #Makes a stellar model taking the
+    #axis lengths and centre points as parameters
     size=x_axis*y_axis           #Initialise size
     R=(x_axis/2)-20              #Radius of star with buffer of 20
     #Create lists for x- and y- axes
@@ -23,15 +23,11 @@ def make_star(x_axis,y_axis,x_centre,y_centre):
     r1=np.add(x,y)
     #Square root arrays to obtain circles
     r=np.sqrt(r1)
-
-    #Make circle of stellar radius
-    for i in range (0,(x_axis-1)):
-        for j in range(0,(y_axis-1)):
-            #Outside the stellar radius will be zeroed     
-            if (r[i][j]>R):
-                r[i][j]=0.0
+    #Make circle of given stellar radius
+    mask=(r<=R)
+    r=r*mask
     #Plot stellar model    
-    plt.imshow(r, cmap=plt.cm.binary)
+    plt.imshow(r, cmap=plt.cm.binary) 
 
 def limb_darkening(a,b,gamma):
     #Calculates quadratic limb darkening coefficient
