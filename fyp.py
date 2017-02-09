@@ -29,30 +29,37 @@ def make_star(x_axis,y_axis):
     mask=(r<=R)
     r=r*mask
     #Plot stellar model    
-    plt.imshow(r, cmap=plt.cm.binary)
+    #plt.imshow(r, cmap=plt.cm.binary)
+    #plt.ylim([0,1024])
     return r
     
 def limb_darkening(a,b,gamma):
     mu=math.cos(gamma)
     LD=1-(a*(1-mu))-(b*((1-mu)**2))
-    print (LD)
+    return LD
     
-def spectrum(r, A, sigma):
-    y_flux=np.cumsum(r)
-    x_flux=np.cumsum(y_flux)
-    print(x_flux)
-    v=-10
-    vx=10
-    Gauss=1-A*np.exp((-(v-vx)**2)/(2*sigma**2))
-    print("Gauss=",Gauss)
-    Fv=x_flux*Gauss
-    print(Fv)
-    plt.plot(Fv)
-    plt.ylim([0,1*10**17])
-    plt.xlim([0,1*10**17])
+def spectrum(r, A, sigma):  
+    #Equatorial Velocity
+    veq=2.
+    vrot=(np.arange(1025)-512)/512.*veq
+    v=np.arange(-12,12,0.02)  #-12....12
+    flux=np.zeros(1025)
 
-
+    #Gaussian
+    fstar=np.sum(r,0)
+    i=0
+    for vx in vrot :
+        #Gaussian calculation
+        Gauss=1-A*np.exp((-(v-vx)**2)/(2*sigma**2))
+        print("Gauss=",Gauss)
+        #Calculate flux
+        flux[i,:]=fstar[i]*Gauss
+        i+=1
+    plt.plot(v,flux.sum(1))
+    
+    
     
 r=make_star(1024,1024)
-limb_darkening(0.3,0.1,0)
-spectrum(r, 0.9, 3)
+r=r-limb_darkening(0.3,0.1,1)
+spectrum(r, 0.9, 2)
+#plt.imshow(r, cmap=plt.cm.binary)
