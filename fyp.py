@@ -36,7 +36,8 @@ def make_star(x_axis,y_axis,R):
 def limb_darkening(a,b,r):
     
     mu=np.sqrt(1-r**2)
-    LD=1-(a*(1-
+    LD=1-(a*(1-mu))-(b*((1-mu)**2))
+    return LD
     
 def spectrum(r, A, sigma):  
     #Equatorial Velocity
