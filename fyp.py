@@ -65,6 +65,7 @@ def planet_motion(planet,coeff,i,phase):
     
 star=make_star(1024,1024,512)
 star=star-limb_darkening(0.3,0.1,1)
+#get spectrum of limb darkening
 spectrum(star, 0.9, 2)
 planet=make_star(1024,1024,256)
 system=star+planet
