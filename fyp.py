@@ -1,7 +1,8 @@
 #Project
 import numpy as np
-import pylab as plt
+import matplotlib.pyplot as plt
 import math
+import scipy.misc
 
 def make_star(x_axis,y_axis,R):
     size=x_axis*y_axis           #Initialise size
@@ -31,12 +32,14 @@ def make_star(x_axis,y_axis,R):
     #Plot stellar model    
     #plt.imshow(r, cmap=plt.cm.binary)
     #plt.ylim([0,1024])
+    print(r[512,512])
     return r
     
 def limb_darkening(a,b,r):
     
     mu=np.sqrt(1-r**2)
     LD=1-(a*(1-mu))-(b*((1-mu)**2))
+    #plt.imshow(LD, cmap=plt.cm.binary)
     return LD
     
 def spectrum(r, A, sigma):  
@@ -55,20 +58,20 @@ def spectrum(r, A, sigma):
         #Calculate flux
         flux=fstar[i]*Gauss
         i+=1
-    #plt.plot(v,flux)    
+    plt.plot(v,-flux)    
 
-def planet_motion(planet,coeff,i,phase):
-    x=coeff*np.sin(2*np.pi*phase)
-    y=coeff*np.cos(i)*np.cos(2*np.pi*phase)
-    plt.plot(planet)
-    #plt.plot(planet[200,500])
-    
-star=make_star(1024,1024,512)
-star=star-limb_darkening(0.3,0.1,1)
-#get spectrum of limb darkening
-spectrum(star, 0.9, 2)
-planet=make_star(1024,1024,256)
-system=star+planet
-spectrum(system, 0.9, 2)
-planet_motion(planet,8.84,1.14959,1)
-#plt.imshow(system, cmap=plt.cm.binary)
+def planet_motion(coeff,i,Rstar,centre):
+    phase=np.arange(-0.1,0.1,0.001)
+    x=coeff*np.sin(2*np.pi*phase)*Rstar+centre   
+    y=coeff*np.cos(i)*np.cos(2*np.pi*phase)*Rstar+centre
+    #plt.plot(x,y)        
+        
+star=make_star(1024,1024,512)           #make star array
+star=limb_darkening(0.3,0.1,star)       #add limb darkening
+spectrum(star, 0.9, 2)                  #display spectrum of star
+#planet=make_star(1024,1024,256)         #make planet
+#system=star+planet                      #make planet and star array
+#spectrum(system, 0.9, 0.7)              #make spectrum of star and planet system
+#planet_motion(8.84,1.14959,512,512)   
+#plt.imshow(star, cmap=plt.cm.binary)
+#scipy.misc.imsave('project_image.jpg', -star)
