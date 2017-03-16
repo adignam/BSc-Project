@@ -4,12 +4,10 @@ import matplotlib.pyplot as plt
 import math
 import scipy.misc
 
-def make_star(x_axis,y_axis,R):
+def make_circle(x_axis,y_axis,R=510,xc=512.,yc=512.):
     size=x_axis*y_axis           #Initialise size
-    R=(R)-20                     #Radius of star with buffer of 20
-    x_centre=x_axis/2
-    y_centre=y_axis/2
-    
+    x_centre=xc#x_axis/2
+    y_centre=yc#y_axis/2   
     #Create list
     x=np.arange(size*1.) % x_axis
     y=np.arange(size*1.) % y_axis    
@@ -30,48 +28,53 @@ def make_star(x_axis,y_axis,R):
     mask=(r<=R)
     r=r*mask
     #Plot stellar model    
-    #plt.imshow(r, cmap=plt.cm.binary)
+    #plt.imshow(mask, cmap=plt.cm.binary)
     #plt.ylim([0,1024])
-    return r
+    return r, mask
     
-def limb_darkening(a,b,r):
-    
+def limb_darkening(a,b,r,mask):
+    #Calculates limb darkening for the star    
     mu=np.sqrt(1-r**2)
-    LD=1-(a*(1-mu))-(b*((1-mu)**2))
+    LD=r*0.
+    LD[mask==1]=1-(a*(1-mu[mask==1]))-(b*((1-mu[mask==1])**2))
     return LD
     
 def spectrum(r, A, sigma):  
-    #Equatorial Velocity
+    #Plots the spectrum of the star
     veq=2.
     vrot=(np.arange(1024)-512)/512.*veq
-    v=np.arange(-12,12,0.02345)  #-12....12
+    v=np.arange(-12,12,0.02345)  
     flux=np.zeros(np.shape(v))
-
-    #Gaussian
     fstar=-np.sum(r,0) 
-    i=0
-    for vx in vrot:
-        #Gaussian calculation
-        Gauss=1-A*np.exp((-(v-vx)**2)/(2*sigma**2))
-        #Calculate flux
+    vx=np.zeros(len(vrot))
+    
+    Gauss=1-A*np.exp((-(v-vx)**2)/(2*sigma**2))
+    for i in range(0,len(vrot)):       
         flux=fstar[i]*Gauss
         i+=1
     plt.plot(v,-flux)    
 
-def planet_motion(coeff,i,Rstar,centre):
-    phase=np.arange(-0.1,0.1,0.001)
+    
+def planet_motion(coeff,i,Rstar,phase,phase_bin,centre):
+    
+    phase=np.arange(-phase,phase,phase_bin)
     x=coeff*np.sin(2*np.pi*phase)*Rstar+centre   
     y=coeff*np.cos(i)*np.cos(2*np.pi*phase)*Rstar+centre
     Rplanet = Rstar/2
+
     for i in range(0,200):
-    
-    
-star=make_star(1024,1024,512)           #make star array
-star=limb_darkening(0.3,0.1,star)     #add limb darkening
-#spectrum(star, 0.9, 2)                  #display spectrum of star
-planet=make_star(1024,1024,256)         #make planet
-#system=star+planet                      #make planet and star array
-#spectrum(system, 0.9, 0.7)              #make spectrum of star and planet system
-planet_motion(8.84,1.,512,512)       # coeff=8.84,i = 1.14959 for hd189733b
+        r,mask=make_circle(1024,1024,Rplanet,x[i],y[i])
+        mask=1-mask
+        spectrum(mask, 0.9, 0.7)
+        star=limb_darkening(0.3,0.3,r,mask)*mask
+        spectrum(star, 0.9, 0.7)
+        
+        
+star=make_circle(1024,1024,510)           #make star 
+
+planet=make_circle(1024,1024,256)         #make planet
+
+planet_motion(8.84,1.,512,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
+
 #plt.imshow(star, cmap=plt.cm.binary)
 #scipy.misc.imsave('project_image.jpg', -star)
