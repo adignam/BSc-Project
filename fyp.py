@@ -1,8 +1,10 @@
 #Project
 import numpy as np
 import matplotlib.pyplot as plt
+from IPython import display
 import math
 import scipy.misc
+import time
 
 def make_circle(x_axis,y_axis,R=510,xc=512.,yc=512.):
     size=x_axis*y_axis           #Initialise size
@@ -61,29 +63,30 @@ def planet_motion(coeff,i,Rstar,phase,phase_bin,centre):
     y=coeff*np.cos(i)*np.cos(2*np.pi*phase)*Rstar+centre
     Rplanet = Rstar/2
     
-    star,mask1=make_circle(1024,1024,510)
-    #print(mask1[512,512])                   #true
-    #plt.imshow(mask1, cmap=plt.cm.binary) #black disk obtained
-    star=-limb_darkening(0.3,0.3,star,mask1)
-    plt.imshow(star)   
-    plt.imshow(star, cmap=plt.cm.binary) 
+    star,mask1=make_circle(1025,1025,Rstar)
+    star=star-limb_darkening(0.3,0.3,star,~mask1)
     star=np.nan_to_num(star)
-    print(star[400,200])
-    plt.imshow(star, cmap=plt.cm.binary)   
 
     g,v=gauss(0.9,0.7,2.)
-    '''
+
     for i in range(0,200):
-        r,mask=make_circle(1024,1024,Rplanet,x[i],y[i])
-        mask=1-mask
-        plt.imshow(mask)
-        #plt.imshow(r)
-        #spectrum(star,v,g)
-        '''
-        
-#star=make_circle(1024,1024,510)           #make star 
+        if (x[i]<0):
+            planet,mask=make_circle(1025,1025,Rplanet,-x[i],y[i])
+        else:
+            planet,mask=make_circle(1025,1025,Rplanet,x[i],y[i])
+        planet=limb_darkening(0,0,planet,mask)       
+    plt.figure()
+    plt.title(i)
+    mask=1-mask
+    system=star+planet
+    #plt.imshow(system, cmap=plt.cm.binary)
+        #plt.close()
+    flux=spectrum(system,v,g)
+    plt.plot(v,-flux)
+ 
+#star=make_circle(1024,1024,510)           make star 
 #planet,m=make_circle(1024,1024,256)         #make planet
-planet_motion(8.84,1.,512,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
+planet_motion(1,1.,500,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
 
 #plt.imshow(planet, cmap=plt.cm.binary)
 #scipy.misc.imsave('project_image.jpg', -star)
