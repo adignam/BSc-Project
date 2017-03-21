@@ -61,7 +61,7 @@ def planet_motion(coeff,i,Rstar,phase,phase_bin,centre):
     phase=np.arange(-phase,phase,phase_bin)
     x=coeff*np.sin(2*np.pi*phase)*Rstar+centre   
     y=coeff*np.cos(i)*np.cos(2*np.pi*phase)*Rstar+centre
-    Rplanet = Rstar/2
+    Rplanet=Rstar/2.
     
     star,mask1=make_circle(1025,1025,Rstar)
     star=star-limb_darkening(0.3,0.3,star,~mask1)
@@ -70,23 +70,21 @@ def planet_motion(coeff,i,Rstar,phase,phase_bin,centre):
     g,v=gauss(0.9,0.7,2.)
 
     for i in range(0,200):
-        if (x[i]<0):
-            planet,mask=make_circle(1025,1025,Rplanet,-x[i],y[i])
-        else:
-            planet,mask=make_circle(1025,1025,Rplanet,x[i],y[i])
-        planet=limb_darkening(0,0,planet,mask)       
+
+        planet,mask=make_circle(1025,1025,Rplanet,(x[i]),(y[i]))
+        #planet=limb_darkening(0,0,planet,mask)    
     plt.figure()
     plt.title(i)
-    mask=1-mask
     system=star+planet
-    #plt.imshow(system, cmap=plt.cm.binary)
-        #plt.close()
-    flux=spectrum(system,v,g)
-    plt.plot(v,-flux)
+    print(mask)
+    plt.imshow(mask, cmap=plt.cm.binary)
+        #plt.close()spectrum(star,v,g)-
+        #flux=spectrum(system,v,g)
+        #plt.plot(v,-flux)
  
 #star=make_circle(1024,1024,510)           make star 
 #planet,m=make_circle(1024,1024,256)         #make planet
-planet_motion(1,1.,500,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
+planet_motion(1,1.,500.,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
 
 #plt.imshow(planet, cmap=plt.cm.binary)
 #scipy.misc.imsave('project_image.jpg', -star)
