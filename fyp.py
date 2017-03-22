@@ -81,30 +81,29 @@ def planet_motion(coeff,i,Rstar,phase,phase_bin,centre):
     return flux, v
         
 def chi_squared(data,model,sigma,v):
-        
-    v1=[]
+    print(data,model)        
+    #v1=np.zeros(len(v))
+    v1=0
     v2=[]
-    chi1=((data-model)**2)/sigma**2
-    chi2=((data-model)**2)/sigma**2
+    chi2=45
+    data=np.arange(0,1024,1)
     
-    for i in v:
-        v1.append(v1)
-        v2.append(v2)
-
-        chi1.append(chi1)
-        chi2.append(chi2)
+    for i in range (0,len(v)):
+        chi1=sum((data[:]-model[:])**2)/sigma**2
+        v2.append(v1+random())        
+    
+        ratio=np.exp(((chi1-chi2)/2)*sigma**2)
         
-        v2[i]=v1[i]+random(1)        
-    
-    ratio=np.exp(((chi1-chi2)/2)*sigma**2)
-    
-    if random() < ratio:
-        v1=v2
-        chi1=chi2
+        if random()<ratio:
+            v1=v2
+            chi1=chi2
+            print(chi1)
+            
+    print(chi1,chi2)
  
 #star=make_circle(1024,1024,510)           make star 
 #planet,m=make_circle(1024,1024,256)         #make planet
-flux,v=planet_motion(1,1.,500,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
+flux,v=planet_motion(1.,1.,500,0.1,0.001,512)            # coeff=8.84,i = 1.14959 for hd189733b
 chi_squared(flux,flux,1.,v)
 #plt.imshow(planet, cmap=plt.cm.binary)
 #scipy.misc.imsave('project_image.jpg', -star)
