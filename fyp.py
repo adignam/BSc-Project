@@ -65,7 +65,7 @@ def spectrum(array,g,v):
     
     
 def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre):
-    phase=np.arange(-phase,phase,phase_bin)
+    #phase=np.arange(-phase,phase,phase_bin)
     x=aRstar*np.sin(2*np.pi*phase)*Rstar+centre   
     y=aRstar*np.cos(incl)*np.cos(2*np.pi*phase)*Rstar+centre
     Rplanet = Rstar/10.
@@ -97,7 +97,7 @@ def get_phase():
 
     Ins = filelist.copy()
     Info = open('Info.txt','w')
-    print("File name                             Phase      Orbit Number   Instrument")
+    #print("File name                             Phase      Orbit Number   Instrument")
     
     i = 0
     Data = np.loadtxt('JulianDates')
@@ -123,49 +123,33 @@ def get_phase():
         JD[i] = (MJD + 2400000.5)
         MJDEQ = str(JD[i])
         Entry = str(i) 
-        print("Current file number " + Entry + " is: " + infile + " and its Julian date is " + MJDEQ)
+        #print("Current file number " + Entry + " is: " + infile + " and its Julian date is " + MJDEQ)
         
         #print(("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i])),file = Info)
         #print("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i]))
         hdulist.close()
         i += 1
-    return FinalP
-        
-
+    return FinalP, Data, v
 
 def mcmc(parameters,phase,data,v):
+    
     aRstar=1.           #8.84
     incl=90.*np.pi/180.                #85.71
     Rstar=500
     centre=512
-    phase=get_phase()
-    error=0.3
+
     stepsize=1
     nstep=1
-    npars=np.size(parameters)
-    lamda=-0.85           #degrees
-    Rplanet=216/Rstar     #normalised by Rstar
-    vsini=3.5                             
-    period=2.21857567*86400 #seconds
-    Mstar=0.806         #solar masses
-    
-    ##free parameters
-    #rprstar
-    #veq
-    #linewidth (FWHM/2.35)
-    #lambda
-    #amplitude
-    
+    npars=np.size(parameters)                          
+
     ##get v from the fits files
     
     ##fix
-    #aRstar
-    #incl
-    #u1
-    #u2
+    #u1=0.3
+    #u2=0.3
     
     
-    flux=planet_motion(phase,aRstar,incl,Rstar,0.1,0.001,centre)
+    flux=planet_motion(aRstar,incl,Rstar,phase,0.001,centre)
     phase=get_phase()
 
     #define the array that stores all the steps.
@@ -174,7 +158,7 @@ def mcmc(parameters,phase,data,v):
     chain[:,0]=parameters
 
     ##calculate the model 
-    model,phase=planet_motion(aRstar,i,Rstar,0.1,0.001,centre)
+    model,phase=planet_motion(aRstar,incl,Rstar,0.1,0.001,centre)
     
     ##calculate Chi squared.
     chisq=np.sum( (flux-model)**2/error**2 )
@@ -210,17 +194,18 @@ def mcmc(parameters,phase,data,v):
 #planet,m=make_circle(1024,1024,256)         #make planet
 #flux,v=planet_motion(1.,1.,500,0.1,0.001,512) 
 #printflux)           # coeff=8.84,i = 1.14959 for hd189733b
+#free parameters
 Rp_Rstar=0.12
 lamda=-0.85  *np.pi/180. ##radians
 amplitude=0.9
 line_width=2.7
-vsini=2.
+vsini=3.5
 
 e_Rplanet=0.027
-e_lamda=+0.28
+e_lamda=0.28
 
 phase,data,v=get_phase()
 parameters=[Rp_Rstar,lamda,amplitude,line_width,vsini]
-mcmc(parameters)
+mcmc(parameters,phase,data,v)
 #plt.imshow(planet, cmap=plt.cm.binary)
 #scipy.misc.imsave('project_image.jpg', -star)
