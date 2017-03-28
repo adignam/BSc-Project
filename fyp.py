@@ -71,7 +71,6 @@ def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre):
     Rplanet = Rstar/10.
     g,v=gauss(0.9,2.7,2.)
     
-    
     star,mask1=make_circle(1025,1025,Rstar)
     star=limb_darkening(0.3,0.3,star/Rstar,mask1)
     star=np.nan_to_num(star)    
@@ -90,15 +89,18 @@ def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre):
     return flux, phase
 
 def get_phase():
-    path = r'C:\Users\Aishling\Documents\Python Scripts'
+    path = r'\\ad\data\STUHOME\13\43\dignama3\Python Scripts\ccf'
+
     filelist = glob.glob(os.path.join(path, '*.*') )
     phase = np.zeros(len(filelist))
+    JD = np.zeros(len(filelist))
+
     Ins = filelist.copy()
     Info = open('Info.txt','w')
     print("File name                             Phase      Orbit Number   Instrument")
     
     i = 0
-    Data = np.loadtxt('JulianDate')
+    Data = np.loadtxt('JulianDates')
     FinalP=np.zeros(len(filelist))
     for infile in filelist:
             
@@ -112,9 +114,19 @@ def get_phase():
         phase[i] = (Data[i] - T)/P 
         OrbitNo = round(phase[i],0)
         FinalP[i] = phase[i] - OrbitNo
+        hdulist = fits.open(infile)
+        MJD = hdulist[0].header['mjd-obs']
+        v1=hdulist[0].header['CRVAL1']
+        v2=hdulist[0].header['CDELT1']
+        v3=hdulist[0].header['NAXIS1']
+        v=(v1+v2)*np.arange(0,v3)
+        JD[i] = (MJD + 2400000.5)
+        MJDEQ = str(JD[i])
+        Entry = str(i) 
+        print("Current file number " + Entry + " is: " + infile + " and its Julian date is " + MJDEQ)
         
-        print(("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i])),file = Info)
-        print("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i]))
+        #print(("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i])),file = Info)
+        #print("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i]))
         hdulist.close()
         i += 1
     return FinalP
@@ -207,7 +219,8 @@ vsini=2.
 e_Rplanet=0.027
 e_lamda=+0.28
 
-parameters=[Rplanet,lamda,amplitude,line_width,vsini]
+phase,data,v=get_phase()
+parameters=[Rp_Rstar,lamda,amplitude,line_width,vsini]
 mcmc(parameters)
 #plt.imshow(planet, cmap=plt.cm.binary)
 #scipy.misc.imsave('project_image.jpg', -star)
