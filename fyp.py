@@ -93,7 +93,7 @@ def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre,v,amp,line_width):
     return flux
 
 def get_phase():
-    path = r'C:\Users\Aishling\Documents\Python Scripts\ccf'
+    path = r'/home/member/a/aishling/Project/ccf'
     filelist = glob.glob(os.path.join(path, '*A.*') )
     phase = np.zeros(len(filelist))
     JD = np.zeros(len(filelist))
