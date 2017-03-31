@@ -42,16 +42,15 @@ def limb_darkening(a,b,r,mask):
     LD[mask==1]=1-(a*(1-mu[mask==1]))-(b*((1-mu[mask==1])**2))
     return LD
 
-def gauss(a,sigma,veq):
+def gauss(a,sigma,veq,v):
     vrot=(np.arange(1024)-512)/512.*veq
-    v=np.arange(-12,12,0.02345)  
-    
+    #v=np.arange(-12,12,0.02345)    
     gauss=np.zeros( (vrot.shape[0],v.shape[0]) )
     i=0
     for vx in vrot:
         gauss[i,:]=1-a*np.exp((-(v-vx)**2)/(2*sigma**2))
         i=i+1
-    return gauss,v
+    return gauss
     
 def spectrum(array,g,v):  
     #Plots the spectrum of the star
@@ -61,20 +60,20 @@ def spectrum(array,g,v):
     for i in range(0,len(v)):       
         flux=flux+fstar[i]*g[i,:]
         i+=1
+    flux=flux/np.median(flux[((v<-12)|(v>12))])        
     return flux   
     
     
-def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre):
+def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre,v):
     #phase=np.arange(-phase,phase,phase_bin)
     x=aRstar*np.sin(2*np.pi*phase)*Rstar+centre   
     y=aRstar*np.cos(incl)*np.cos(2*np.pi*phase)*Rstar+centre
     Rplanet = Rstar/10.
-    g,v=gauss(0.9,2.7,2.)
+    g=gauss(0.9,2.7,2.,v)
     
     star,mask1=make_circle(1025,1025,Rstar)
     star=limb_darkening(0.3,0.3,star/Rstar,mask1)
     star=np.nan_to_num(star)    
-    g,v=gauss(0.9,0.7,2.)
     flux=np.zeros( (len(phase),len(v)) )
     for i in range(0 ,len(phase)):
         planet,mask=make_circle(1025,1025,Rplanet,x[i],y[i])
@@ -85,95 +84,76 @@ def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre):
         #plt.plot(v,flux[i,:])
         #plt.pause(0.5)
         #plt.close()
-    plt.imshow(flux, cmap=plt.cm.afmhot)    
-    return flux, phase
+    #plt.imshow(flux, cmap=plt.cm.afmhot)    
+    return flux
 
 def get_phase():
-    path = r'\\ad\data\STUHOME\13\43\dignama3\Python Scripts\ccf'
-
-    filelist = glob.glob(os.path.join(path, '*.*') )
+    path = r'C:\Users\Aishling\Documents\Python Scripts\ccf'
+    filelist = glob.glob(os.path.join(path, '*A.*') )
     phase = np.zeros(len(filelist))
     JD = np.zeros(len(filelist))
-
     Ins = filelist.copy()
-    Info = open('Info.txt','w')
-    #print("File name                             Phase      Orbit Number   Instrument")
-    
     i = 0
-    Data = np.loadtxt('JulianDates')
+    Date = np.loadtxt('JulianDates')
     FinalP=np.zeros(len(filelist))
-    for infile in filelist:
-            
+    data=np.zeros((len(filelist),161))
+    for infile in filelist:            
         hdulist = fits.open(infile)
-        Ins[i] = hdulist[0].header['HIERARCH ESO INS ID']  
-        
+        Ins[i] = hdulist[0].header['HIERARCH ESO INS ID']          
         #Calculation for Phase and Orbit Number
-        f = filelist[i][36:]
+
         T = 2454279.436714
         P = 2.21857567
-        phase[i] = (Data[i] - T)/P 
+        phase[i] = (Date[i] - T)/P 
         OrbitNo = round(phase[i],0)
         FinalP[i] = phase[i] - OrbitNo
-        hdulist = fits.open(infile)
         MJD = hdulist[0].header['mjd-obs']
         v1=hdulist[0].header['CRVAL1']
         v2=hdulist[0].header['CDELT1']
         v3=hdulist[0].header['NAXIS1']
-        v=(v1+v2)*np.arange(0,v3)
-        JD[i] = (MJD + 2400000.5)
-        MJDEQ = str(JD[i])
-        Entry = str(i) 
-        #print("Current file number " + Entry + " is: " + infile + " and its Julian date is " + MJDEQ)
+        v=v1+v2*np.arange(v3)+2.55
         
-        #print(("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i])),file = Info)
-        #print("(%s) %3s %10f %7i %15s" % (i,f,FinalP,OrbitNo,Ins[i]))
+        
+        im=hdulist[0].data
+        spec=im[-1,:]
+        spec=spec/np.median(spec[((v<-12)|(v>12))])
+        data[i,:]=spec
+        JD[i] = (MJD + 2400000.5)
         hdulist.close()
         i += 1
-    return FinalP, Data, v
+    plt.imshow(data)
+    return FinalP, data, v
 
-def mcmc(parameters,phase,data,v):
+def mcmc(parameters,stepsize,phase,data,v):
     
     aRstar=1.           #8.84
     incl=90.*np.pi/180.                #85.71
     Rstar=500
     centre=512
 
-    stepsize=1
-    nstep=1
+    nstep=20
     npars=np.size(parameters)                          
+    error=0.00015
+    u1=0.3
+    u2=0.3
+    #phase=0.1
 
-    ##get v from the fits files
-    
-    ##fix
-    #u1=0.3
-    #u2=0.3
-    
-    
-    flux=planet_motion(aRstar,incl,Rstar,phase,0.001,centre)
-    phase=get_phase()
-
-    #define the array that stores all the steps.
     chain=np.zeros((npars,nstep))
     chi_squared=np.zeros(nstep)
     chain[:,0]=parameters
 
-    ##calculate the model 
-    model,phase=planet_motion(aRstar,incl,Rstar,0.1,0.001,centre)
-    
-    ##calculate Chi squared.
-    chisq=np.sum( (flux-model)**2/error**2 )
+    model=planet_motion(aRstar,incl,Rstar,phase,0.001,centre,v)
+    flux=data
+
+    chisq=np.sum((flux-model)**2/error**2 )
     chi_squared[0]=chisq
     
-    ## Now run the MCMC algorithm Nstep times
     for i in range(1,nstep):
         ##Make a random jump in parameter space
         new_parameters=chain[:,i-1]+np.random.normal(0.,1.,npars)*stepsize
-
-        ## make model, calculate current chi squared and compare to previous value
-        model=make_circle(1025,1025)
-        nchisq=np.sum( (flux-model)**2/error**2 )
+        model=planet_motion(new)
+        nchisq=np.sum((flux-model)**2/error**2 )
         dchi=nchisq-chisq
-        print(chi_squared)
         ## Going to lower chi squared: Accept new value
         if dchi <=0.:
             chain[:,i]=new_parameters
@@ -187,25 +167,22 @@ def mcmc(parameters,phase,data,v):
             else:
                 chain[:,i]=chain[:,i-1]  ## rejected. Stay at current point
         chi_squared[i]=chisq
-        
+    print(new_parameters)
     return chain,chi_squared
 
-#star=make_circle(1024,1024,510)           make star 
-#planet,m=make_circle(1024,1024,256)         #make planet
-#flux,v=planet_motion(1.,1.,500,0.1,0.001,512) 
-#printflux)           # coeff=8.84,i = 1.14959 for hd189733b
-#free parameters
-Rp_Rstar=0.12
-lamda=-0.85  *np.pi/180. ##radians
+Rp_Rstar=0.151
+lamda=-0.85*np.pi/180. ##radians
 amplitude=0.9
 line_width=2.7
 vsini=3.5
 
-e_Rplanet=0.027
+e_Rp_Rstar=0.00012
 e_lamda=0.28
-
+e_amplitude=0.02
+e_line_width=0.02
+e_vsini=0.2
+stepsize=[e_Rp_Rstar,e_lamda,e_amplitude,e_line_width,e_vsini]
 phase,data,v=get_phase()
 parameters=[Rp_Rstar,lamda,amplitude,line_width,vsini]
-mcmc(parameters,phase,data,v)
-#plt.imshow(planet, cmap=plt.cm.binary)
-#scipy.misc.imsave('project_image.jpg', -star)
+stepsize=[]
+mcmc(parameters,stepsize,phase,data,v)
