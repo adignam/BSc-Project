@@ -97,7 +97,7 @@ def get_phase():
     filelist = glob.glob(os.path.join(path, '*A.*') )
     phase = np.zeros(len(filelist))
     JD = np.zeros(len(filelist))
-    Ins = filelist.copy()
+    Ins = filelist
     i = 0
     Date = np.loadtxt('JulianDates')
     FinalP=np.zeros(len(filelist))
