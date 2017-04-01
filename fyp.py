@@ -95,39 +95,34 @@ def planet_motion(aRstar,incl,Rstar,phase,phase_bin,centre,v,amp,line_width):
 def get_phase():
     path = r'/home/member/a/aishling/Project/ccf'
     filelist = glob.glob(os.path.join(path, '*A.*') )
-    phase = np.zeros(len(filelist))
-    JD = np.zeros(len(filelist))
-    Ins = filelist
-    i = 0
-    Date = np.loadtxt('JulianDates')
-    FinalP=np.zeros(len(filelist))
+    phase0 = np.zeros(len(filelist))
+    phase=np.zeros(len(filelist))
     data=np.zeros((len(filelist),161))
+    i = 0
+    T = 2454279.436714
+    P = 2.21857567
+    
     for infile in filelist:            
         hdulist = fits.open(infile)
-        Ins[i] = hdulist[0].header['HIERARCH ESO INS ID']          
-        #Calculation for Phase and Orbit Number
-
-        T = 2454279.436714
-        P = 2.21857567
-        phase[i] = (Date[i] - T)/P 
-        OrbitNo = round(phase[i],0)
-        FinalP[i] = phase[i] - OrbitNo
         MJD = hdulist[0].header['mjd-obs']
+        Date = (MJD + 2400000.5)        
+        phase0[i] = (Date - T)/P 
+        OrbitNo = round(phase0[i],0)
+        phase[i] = phase0[i] - OrbitNo
+
         v1=hdulist[0].header['CRVAL1']
         v2=hdulist[0].header['CDELT1']
         v3=hdulist[0].header['NAXIS1']
-        v=v1+v2*np.arange(v3)+2.55
-        
-        
+        v_data=v1+v2*np.arange(v3)+2.55
+
         im=hdulist[0].data
         spec=im[-1,:]
-        spec=spec/np.median(spec[((v<-12)|(v>12))])
+        spec=spec/np.median(spec[((v_data<-12)|(v_data>12))])
         data[i,:]=spec
-        JD[i] = (MJD + 2400000.5)
         hdulist.close()
         i += 1
     plt.imshow(data)
-    return FinalP, data, v
+    return phase, data, v_data
 
 def mcmc(parameters,stepsize,phase,data,v):
     constant=[0,1,2,3,4,5]
